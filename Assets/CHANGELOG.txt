@@ -1,0 +1,80 @@
+7.0 Some textures and additional geometry added to create a better sense of scale
+
+6.2
+GUI panels fixed by keeping distance fixed from headset, placing GUI panesl 1.75m away isnetad of 1m, and clamping angle to +/- 20 degrees.
+
+Alert messages made bold, brighter and outlined with black.
+
+Fixed an issue where inspector value was been over-written in the script.
+
+6.1
+Canvas now yaw-only (head tilt/pitch no longer affects it)
+
+CameraFollowUI was fully reworked so the alert panel's position and rotation both respond only to horizontal turning — pitch (looking up/down) and roll (tilting your head sideways) are now completely ignored. Three changes together: the vertical offset uses world-up instead of the camera's own up (stops the position swinging when the head tilts), rotation uses world-up too (stops the panel itself tilting), and the facing direction is flattened to horizontal before calculating rotation (stops the panel angling upward to "look at" the user, which previously made it feel like a picture frame tipped back to stare at you, given it sits below eye-level). Damping/smoothing (the Lerp/Slerp catch-up speed) was left untouched. That's an independent concern from which axes affect the target.
+
+Vertical position tuned.
+
+Unrelated bug found and fixed along the way: BoomMovement's baseline-capture logic (turretBaseRotation, boomPivotBaseRotation, telescope start positions) moved from Start() to Awake(). Previously, if InstructionsPanel disabled BoomMovement before Unity got around to calling its Start(), that initialization never ran at all — leaving the whole boom rig (and, since the camera sits nested inside it, the entire view) offset from a wrong, uninitialized baseline for as long as the instructions panel was showing. Awake() runs unconditionally regardless of what disables the component afterward, closing the gap entirely.
+
+Text and panel visual comfort tuning — layout, transparency and font colors/sizes adjusted across the UI for readability comfort.
+
+Added distinct reflection messaging for sessions ended early (before reaching or after reaching the target), and matched panel colors/fonts across the UI for visual consistency.
+
+Editable fields for reflection text changed to const. During testing, one of these fields got accidentally cleared in the Inspector. Since the field itself was the actual runtime source, not a preview sitting alongside a protected code fallback, this silently produced a blank message at runtime with no error to flag it. Converting back to const (matching InstructionsPanel's existing approach) closes this off entirely, at the cost of needing to edit the script rather than the Inspector to change wording.
+
+6.0
+Relection System
+Structure: a second panel (ReflectionPanel) reached via a new "Reflect on Session" button on the debrief screen — a detour, not a replacement. The debrief's four-line summary stays visible the whole time; reflecting never hides it. A Back button returns to the debrief exactly as it was.
+
+Content: a fixed question ("Do you feel ready to continue toward real MEWP training or use?") with three answer buttons — Yes / Somewhat / No — matching the question's own grammar. Buttons stay clickable after answering, so picking a different one just updates the message rather than locking in a first choice.
+
+Responses are collision-aware, not flat. Each of the three answers has two variants — one for a clean session, one where a collision occurred — six total. Each combines two parts: an acknowledgment of the specific answer given, and a neutral, factual restatement of what happened (hazard count, collision, time), read live from EventRecorder. Neither part passes judgment on the other — the system states what happened and what was said; the user draws their own conclusion.
+
+Deliberately excluded: no scoring, no pass/fail verdict, nothing saved to disk or a database — consistent with the project's "reflection, not assessment" stance throughout, and an explicitly acknowledged boundary (a database-backed version is noted as genuine future work, not something faked to look bigger than it is).
+
+All text — question, three answers, six acknowledgments — is set with hardcoded defaults in the script, but as regular public fields, not constants, so everything remains editable in the Inspector without needing to touch code.
+
+5.5
+Delayed transition to debrief for Impact and Completion
+
+Both now keep their existing message (and, for Impact, its alarm) visible for a short window before the debrief screen takes over, rather than cutting to it immediately — giving the player a moment to register what happened. A trigger press skips ahead early if they don't want to wait. Built as one shared method on DebriefScreen (ShowDebriefAfterDelay), used identically by both, rather than duplicating the same timing logic twice.
+
+Guaranteed clean handoff to the debrief screen
+
+AlertDisplay gained HideImpactMessage() (stops the panel and the looping alarm) and HideCompletionMessage(). DebriefScreen.ShowDebrief() now calls all four hide methods — hazard, target, impact, completion — before showing anything, so no matter which of the three routes (End, Impact, Completion) leads there, the screen underneath is always properly cleared first.
+
+Close App and Run Simulation Again, for real
+
+Run Simulation Again reloads the scene entirely, resetting everything at once rather than trying to reset each system by hand. Close App calls Application.Quit() in a real build, but stops Play mode instead when running in the Editor, since Application.Quit() is a known no-op there.
+
+5.4
+Debrief screen — built by duplicating the instructions panel (reusing its ray-interaction buttons and TMP styling) with a new, separate script, DebriefScreen. Shows a fixed four-line summary — target reached, hazard warning count, collision, time taken — rather than a raw event log, avoiding an unbounded list from repeated hazard entries. All four values are read directly from EventRecorder, so anything triggering the debrief only needs to supply a status message, not compute the data itself.
+
+End button wired — InstructionsPanel now routes to the debrief screen: End hides the instructions panel and shows "Simulation Not Complete" with real session data. CloseApp() and RunAgain() exist and are click-tested, with actual quit/reload behavior left for later.
+
+5.3
+Session state — timer and pause/resume
+
+EventRecorder gained StartTimer(), PauseTimer(), and a calculate-on-read ElapsedSeconds property — no Update() loop, since nothing currently needs a continuously visible running timer.
+InstructionsPanel.Dismiss() and a new Pause() method were built as exact mirror images: Dismiss enables movement and starts the timer; Pause disables movement and pauses the timer.
+Start() now explicitly enters the same state Pause() would, rather than treating first-launch and mid-session-pause as two different cases to keep in sync.
+The left controller's X button (Primary Button, bound via Path → XR Controller → Oculus Touch Controller (OpenXR) → Primary Button) was added as a new Input Action and wired to trigger Pause(), guarded so it only fires if the panel isn't already showing.
+ImpactResponder and ScenarioCompletionDetector both now call PauseTimer() at the exact point they already end the session.
+
+Result: a fully working instructions/pause panel — shown on launch or via X mid-session, movement and the session timer both gated by its visibility, Continue resuming both together.
+
+5.2
+Added GUI interaction with raycast pointers.
+Required setup: 
+*Bound Position and Rotation Actions on the XR Controller component (previously empty, leaving tracking frozen) 
+
+*Added an Input Action Manager to enable all Input Actions automatically, matching the same fix already used for BoomMovement's joystick input; 
+
+*Applied a depth-ignoring shader to the ray's material so it renders through nearby geometry, the same technique already used for the alert panels' text;
+
+*Replaced the Event System's input module with XR UI Input Module, the version built specifically for XR-to-UI interaction; 
+
+*Bound clicking to UI Press rather than Select. UI Press is specifically for Canvas UI.
+
+5.1
+Added GUI for instructions, with two placeholder buttons.
