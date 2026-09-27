@@ -16,10 +16,6 @@ module CM3070, project template 5.2 — VR Educational Experience.
 
 ## Running it
 
-Open the project in Unity 2022.3.16f1, connect the Quest 3 via PC Link, and enter
-Play mode. The controls and task instructions are shown on start and can be
-re-shown during the session.
-
 Open the project in Unity 2022.3.16f1. 
 
 Unity opens on an empty scene by default, so open Assets/Scene/SampleScene.unity
