@@ -20,6 +20,13 @@ Open the project in Unity 2022.3.16f1, connect the Quest 3 via PC Link, and ente
 Play mode. The controls and task instructions are shown on start and can be
 re-shown during the session.
 
+Open the project in Unity 2022.3.16f1. 
+
+Unity opens on an empty scene by default, so open Assets/Scene/SampleScene.unity
+from the Project window first. Connect the Quest 3 via PC Link and enter Play
+mode. The controls and task instructions are shown on start and can be re-shown
+during the session.
+
 ## Notes
 
 The experience targets desktop rendering rather than the headset's mobile GPU,
